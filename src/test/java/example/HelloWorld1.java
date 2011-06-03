@@ -14,11 +14,17 @@ public class HelloWorld1 {
 
     mkdir("/tmp/foo", 0750, new AioCallback() {
       public void complete(AioRequest r) {
-        rmdir("/tmp/foo", null);
+        rmdir("/tmp/foo", new AioCallback() {
+					public void complete(AioRequest r) {
+						System.out.println("done");
+					}
+				});
       }
     });
 
-		poll();
+		while(true) {
+			poll();
+		}
 
   }
 
