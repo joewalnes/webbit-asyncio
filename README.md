@@ -48,3 +48,10 @@ The API will look something like this:
                         // alternatively, if you have your own event loop
                         // you can process events on the queue one at a
                         // time.
+
+Yeah, it's a bit verbose in Java, but it works. Alternative JVM languages (such as Clojure, Scala, Groovy, JRuby, Jython, etc) can condense the code. With Java 8 lambdas, the above code will look like this:
+
+
+    AIO aio = new AIO(executor); 
+    aio.open("/some/file", AIO.READ, #{file -> file.readLines(#{line -> /* do something */})});
+    executor.runLoop();
