@@ -13,7 +13,7 @@ clobber: clean
 	make -C libeio clean
 .PHONY: clobber
 
-libeio/libeio.la: $(wildcard libeio/*.c)
+libeio/eio.o: $(wildcard libeio/*.c)
 	@echo ==== Building libeio ====
 	cd libeio && ./autogen.sh
 	cd libeio && ./configure
@@ -26,7 +26,7 @@ build/.javac: $(wildcard src/main/java/org/webbitserver/asyncio/*.java)
 	javac -g -d build/main/classes $^
 	@touch build/.javac
 
-build/lib$(LIBRARY).jnilib: src/main/c/asyncio.h src/main/c/asyncio.c libeio/libeio.la
+build/lib$(LIBRARY).jnilib: src/main/c/asyncio.c libeio/eio.o
 	mkdir -p build
 	gcc -dynamiclib -o $@ \
 		src/main/c/asyncio.c libeio/eio.o \
@@ -42,4 +42,8 @@ dist/$(LIBRARY)-tests.jar: dist/$(LIBRARY).jar $(shell find src/test/java -type 
 	mkdir -p build/test/classes
 	javac -g -d build/test/classes -cp dist/$(LIBRARY).jar $(shell find src/test/java -type f)
 	jar cf $@ -C build/test/classes .
+
+example: dist/$(LIBRARY)-tests.jar
+	java -cp dist/$(LIBRARY).jar:dist/$(LIBRARY)-tests.jar example.HelloWorld1
+.PHONY: example
 

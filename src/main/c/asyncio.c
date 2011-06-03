@@ -1,23 +1,21 @@
-#include "asyncio.h"
-
+#include <jni.h>
 #include <stdio.h>
 #include <eio.h>
 
-JNIEXPORT jint JNICALL Java_org_webbitserver_asyncio_AsyncIO_poll
-  (JNIEnv *env, jobject aio) {
+#define JNI_METHOD(returnType, name) JNIEXPORT returnType JNICALL Java_org_webbitserver_asyncio_AsyncIO_##name
+
+JNI_METHOD(jint, poll)(JNIEnv *env, jobject self) {
   printf("poll\n");
 	return eio_poll();
 }
 
-JNIEXPORT jobject JNICALL Java_org_webbitserver_asyncio_AsyncIO_mkdir
-  (JNIEnv *env, jobject aio, jstring path, jobject callback) {
+JNI_METHOD(jobject, mkdir)(JNIEnv *env, jobject self, jstring path, jint mode, jobject callback) {
   printf("mkdir\n");
-	eio_mkdir ("eio-test-dir", 0777, 0, NULL, NULL);
+	eio_mkdir ("eio-test-dir", mode, 0, NULL, NULL);
 	return NULL;
 }
 
-JNIEXPORT jobject JNICALL Java_org_webbitserver_asyncio_AsyncIO_rmdir
-  (JNIEnv *env, jobject aio, jstring path, jobject callback) {
+JNI_METHOD(jobject, rmdir)(JNIEnv *env, jobject self, jstring path, jobject callback) {
   printf("rmdir\n");
 	return NULL;
 }
