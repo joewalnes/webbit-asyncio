@@ -6,6 +6,16 @@
 
 #define JNI_METHOD(returnType, name) JNIEXPORT returnType JNICALL Java_org_webbitserver_asyncio_AsyncIO_##name
 
+jmethodID callback_jmethod;
+
+JNI_METHOD(void, init)(JNIEnv *env, jobject self) {
+	jclass cls = (*env)->FindClass(env, "org/webbitserver/asyncio/AioCallback");
+	assert(cls != NULL);
+	callback_jmethod = (*env)->GetMethodID(env, cls,
+			"complete", "(Lorg/webbitserver/asyncio/AioRequest;)V");
+	assert(callback_jmethod != NULL);
+}
+
 JNI_METHOD(jint, poll)(JNIEnv *env, jobject self) {
 	return eio_poll();
 }
@@ -20,6 +30,7 @@ struct java_callback* alloc_java_callback(JNIEnv *env, jobject callback) {
 	cb = malloc(sizeof(cb));
 	cb->env = env;
 	cb->global = (*env)->NewGlobalRef(env, callback);
+	return cb;
 }
 
 void free_java_callback(struct java_callback* cb) {
@@ -32,13 +43,7 @@ int completion_callback(eio_req *req) {
 	struct java_callback* cb = (struct java_callback*)(req->data);
 	JNIEnv* env = cb->env;
 
-	// TODO: Cache class/method lookup
-	jclass cls = (*env)->FindClass(env, "org/webbitserver/asyncio/AioCallback");
-	assert(cls != NULL);
-	jmethodID method = (*env)->GetMethodID(env, cls,
-			"complete", "(Lorg/webbitserver/asyncio/AioRequest;)V");
-	assert(method != NULL);
-	(*env)->CallObjectMethod(env, cb->global, method, NULL);
+	(*env)->CallObjectMethod(env, cb->global, callback_jmethod, NULL);
 
 	free_java_callback(cb);
 }
