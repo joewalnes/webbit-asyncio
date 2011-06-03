@@ -22,7 +22,7 @@ public class HelloWorld1 {
       }
     });
 
-		while(true) {
+		while(numRequests() > 0) {
 			poll();
 		}
 

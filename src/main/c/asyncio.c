@@ -16,9 +16,11 @@ JNI_METHOD(void, init)(JNIEnv *env, jobject self) {
 	assert(callback_jmethod != NULL);
 }
 
-JNI_METHOD(jint, poll)(JNIEnv *env, jobject self) {
-	return eio_poll();
-}
+JNI_METHOD(jint, poll       )(JNIEnv *env, jobject self) { return eio_poll(); }
+JNI_METHOD(jint, numRequests)(JNIEnv *env, jobject self) { return eio_nreqs(); }
+JNI_METHOD(jint, numReady   )(JNIEnv *env, jobject self) { return eio_nready(); }
+JNI_METHOD(jint, numPending )(JNIEnv *env, jobject self) { return eio_npending(); }
+JNI_METHOD(jint, numThreads )(JNIEnv *env, jobject self) { return eio_nthreads(); }
 
 struct java_callback {
 	JNIEnv* env;
