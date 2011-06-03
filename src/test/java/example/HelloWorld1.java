@@ -20,6 +20,8 @@ public class HelloWorld1 {
       }
     });
 
+		io.poll();
+
   }
 
 }

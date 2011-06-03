@@ -26,9 +26,12 @@ build/.javac: $(wildcard src/main/java/org/webbitserver/asyncio/*.java)
 	javac -g -d build/main/classes $^
 	@touch build/.javac
 
-build/lib$(LIBRARY).jnilib: src/main/c/asyncio.h src/main/c/asyncio.c
+build/lib$(LIBRARY).jnilib: src/main/c/asyncio.h src/main/c/asyncio.c libeio/libeio.la
 	mkdir -p build
-	gcc -dynamiclib -o $@ src/main/c/asyncio.c -I$(JNI_INCLUDE) -framework JavaVM
+	gcc -dynamiclib -o $@ \
+		src/main/c/asyncio.c libeio/eio.o \
+		-I$(JNI_INCLUDE) -framework JavaVM \
+		-Ilibeio
 
 dist/$(LIBRARY).jar: build/.javac build/lib$(LIBRARY).jnilib
 	mkdir -p dist
