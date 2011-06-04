@@ -76,7 +76,7 @@ public class AsyncIO {
 	 */
 	public static native int numThreads();
 
-	public static native AioRequest mkdir(String path, int mode, int priority, AioCallback callback);
-	public static native AioRequest rmdir(String path, int priority, AioCallback callback);
+	public static native void mkdir(String path, int mode, int priority, AioCallback callback);
+	public static native void rmdir(String path, int priority, AioCallback callback);
 
 }
