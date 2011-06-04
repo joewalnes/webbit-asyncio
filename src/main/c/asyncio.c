@@ -9,16 +9,16 @@
 
 jmethodID callback_jmethod;
 struct pollfd pfd;
-int respipe[2];
+int pipe_out, pipe_in;
 
 void want_poll(void) {
 	char dummy;
-	write(respipe[1], &dummy, 1);
+	write(pipe_in, &dummy, 1);
 }
 
 void done_poll(void) {
 	char dummy;
-	read(respipe[0], &dummy, 1);
+	read(pipe_out, &dummy, 1);
 }
 
 JNI_METHOD(void, init)(JNIEnv *env, jobject self) {
@@ -28,20 +28,19 @@ JNI_METHOD(void, init)(JNIEnv *env, jobject self) {
 			"complete", "(Lorg/webbitserver/asyncio/AioRequest;)V");
 	assert(callback_jmethod != NULL);
 
-	assert(pipe(respipe) == 0);
-	pfd.fd = respipe[0];
+  int pipe_args[2];
+	assert(pipe(pipe_args) == 0);
+	pipe_out = pipe_args[0];
+	pipe_in = pipe_args[1];
+	pfd.fd = pipe_out;
 	pfd.events = POLLIN;
 
 	assert(eio_init(want_poll, done_poll) == 0);
 }
 
-JNI_METHOD(jint, poll)(JNIEnv *env, jobject self) { 
-	return eio_poll();
-}
-
-JNI_METHOD(void, block)(JNIEnv *env, jobject self) {
-	poll(&pfd, 1, -1);
-}
+JNI_METHOD(jint, poll)(JNIEnv *env, jobject self) { return eio_poll(); } 
+JNI_METHOD(void, block)(JNIEnv *env, jobject self) { poll(&pfd, 1, -1); }
+JNI_METHOD(jint, wakeUpFileDescriptor)(JNIEnv *env, jobject self) { return pipe_out; }
 
 JNI_METHOD(jint, numRequests)(JNIEnv *env, jobject self) { return eio_nreqs(); }
 JNI_METHOD(jint, numReady   )(JNIEnv *env, jobject self) { return eio_nready(); }

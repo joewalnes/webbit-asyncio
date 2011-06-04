@@ -38,6 +38,13 @@ public class AsyncIO {
 	public static native int block();
 
 	/**
+	 * This is a standard POSIX file descriptor that can be used
+	 * in select()/poll()/epoll()/kqueue loops. When there's something
+	 * to process on the queue, the FD will be readable.
+	 */
+	public static native int wakeUpFileDescriptor();
+
+	/**
 	 * Number of requests in-flight.
 	 */
 	public static native int numRequests();
