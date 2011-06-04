@@ -53,6 +53,9 @@ struct java_callback {
 };
 
 struct java_callback* alloc_java_callback(JNIEnv *env, jobject callback) {
+	if (callback == NULL) {
+		return NULL;
+	}
 	struct java_callback* cb;
 	cb = malloc(sizeof(cb));
 	cb->env = env;
@@ -68,6 +71,10 @@ void free_java_callback(struct java_callback* cb) {
 
 int completion_callback(eio_req *req) {
 	struct java_callback* cb = (struct java_callback*)(req->data);
+	if (cb == NULL) {
+		return;
+	}
+
 	JNIEnv* env = cb->env;
 
 	(*env)->CallObjectMethod(env, cb->global, callback_jmethod, NULL);
