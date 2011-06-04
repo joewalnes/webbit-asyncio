@@ -23,6 +23,7 @@ public class HelloWorld1 {
     });
 
 		while(numRequests() > 0) {
+			block();
 			poll();
 		}
 

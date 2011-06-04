@@ -11,10 +11,31 @@ public class AsyncIO {
 	/**
 	 * Must be called regularly to handle pending requests.
 	 *
+	 * <p>This will always process any callbacks on the queue
+	 * immediately (on the calling thread) and return. If there's
+	 * nothing to do, it returns immediately.
+	 *
+	 * <p>A typical event loop may look like this:
+	 * <pre>
+	 * while (numRequests() &gt; 0) {
+	 *   block(); // Don't bother looping unless there's something to do
+	 *   poll(); // Process events (if they exist)
+	 * }
+	 * </pre>
+	 *
 	 * @return 0 if all requests were handled, -1 if not, 
 	 *           or the value of EIO_FINISH if != 0
+	 * @see #block()
 	 */
 	public static native int poll();
+
+	/**
+	 * Blocks the calling thread until it's time to actually do something.
+	 *
+	 * This prevents callers from having to continually call poll() when
+	 * there may be nothing to do.
+	 */
+	public static native int block();
 
 	/**
 	 * Number of requests in-flight.

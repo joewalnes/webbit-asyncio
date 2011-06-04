@@ -1,12 +1,25 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+#include <poll.h>
 #include <jni.h>
 #include <eio.h>
 
 #define JNI_METHOD(returnType, name) JNIEXPORT returnType JNICALL Java_org_webbitserver_asyncio_AsyncIO_##name
 
 jmethodID callback_jmethod;
+struct pollfd pfd;
+int respipe[2];
+
+void want_poll(void) {
+	char dummy;
+	write(respipe[1], &dummy, 1);
+}
+
+void done_poll(void) {
+	char dummy;
+	read(respipe[0], &dummy, 1);
+}
 
 JNI_METHOD(void, init)(JNIEnv *env, jobject self) {
 	jclass cls = (*env)->FindClass(env, "org/webbitserver/asyncio/AioCallback");
@@ -14,9 +27,22 @@ JNI_METHOD(void, init)(JNIEnv *env, jobject self) {
 	callback_jmethod = (*env)->GetMethodID(env, cls,
 			"complete", "(Lorg/webbitserver/asyncio/AioRequest;)V");
 	assert(callback_jmethod != NULL);
+
+	assert(pipe(respipe) == 0);
+	pfd.fd = respipe[0];
+	pfd.events = POLLIN;
+
+	assert(eio_init(want_poll, done_poll) == 0);
 }
 
-JNI_METHOD(jint, poll       )(JNIEnv *env, jobject self) { return eio_poll(); }
+JNI_METHOD(jint, poll)(JNIEnv *env, jobject self) { 
+	return eio_poll();
+}
+
+JNI_METHOD(void, block)(JNIEnv *env, jobject self) {
+	poll(&pfd, 1, -1);
+}
+
 JNI_METHOD(jint, numRequests)(JNIEnv *env, jobject self) { return eio_nreqs(); }
 JNI_METHOD(jint, numReady   )(JNIEnv *env, jobject self) { return eio_nready(); }
 JNI_METHOD(jint, numPending )(JNIEnv *env, jobject self) { return eio_npending(); }
