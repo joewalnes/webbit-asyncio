@@ -82,13 +82,29 @@ int completion_callback(eio_req *req) {
 	free_java_callback(cb);
 }
 
-JNI_METHOD(void, mkdir)(JNIEnv *env, jobject self, jstring path, jint mode, int priority, jobject callback) {
+JNI_METHOD(void, open)(JNIEnv *env, jobject self, jstring path, jint flag, jint mode, jint priority, jobject callback) {
+	const char* pathChars = (*env)->GetStringUTFChars(env, path, 0);
+	eio_open(pathChars, flag, mode, priority, completion_callback, alloc_java_callback(env, callback));
+	(*env)->ReleaseStringUTFChars(env, path, pathChars);
+}
+
+JNI_METHOD(void, close)(JNIEnv *env, jobject self, jint fd, jint priority, jobject callback) {
+	eio_close(fd, priority, completion_callback, alloc_java_callback(env, callback));
+}
+
+JNI_METHOD(void, unlink)(JNIEnv *env, jobject self, jstring path, jint priority, jobject callback) {
+	const char* pathChars = (*env)->GetStringUTFChars(env, path, 0);
+	eio_unlink(pathChars, priority, completion_callback, alloc_java_callback(env, callback));
+	(*env)->ReleaseStringUTFChars(env, path, pathChars);
+}
+
+JNI_METHOD(void, mkdir)(JNIEnv *env, jobject self, jstring path, jint mode, jint priority, jobject callback) {
 	const char* pathChars = (*env)->GetStringUTFChars(env, path, 0);
 	eio_mkdir(pathChars, mode, priority, completion_callback, alloc_java_callback(env, callback));
 	(*env)->ReleaseStringUTFChars(env, path, pathChars);
 }
 
-JNI_METHOD(void, rmdir)(JNIEnv *env, jobject self, jstring path, int priority, jobject callback) {
+JNI_METHOD(void, rmdir)(JNIEnv *env, jobject self, jstring path, jint priority, jobject callback) {
 	const char* pathChars = (*env)->GetStringUTFChars(env, path, 0);
 	eio_rmdir(pathChars, priority, completion_callback, alloc_java_callback(env, callback));
 	(*env)->ReleaseStringUTFChars(env, path, pathChars);

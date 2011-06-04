@@ -14,11 +14,19 @@ public class HelloWorld1 {
 
     mkdir("/tmp/foo", 0750, 0, new AioCallback() {
       public void complete(AioRequest r) {
-        rmdir("/tmp/foo", 0, new AioCallback() {
+
+				open("/tmp/foo/file", WRITE | CREATE, 0700, 0, new AioCallback() {
 					public void complete(AioRequest r) {
-						System.out.println("done");
+
+						rmdir("/tmp/foo", 0, new AioCallback() {
+							public void complete(AioRequest r) {
+								System.out.println("done");
+							}
+						});
+
 					}
 				});
+
       }
     });
 

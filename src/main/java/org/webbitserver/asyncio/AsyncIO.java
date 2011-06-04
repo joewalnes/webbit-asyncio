@@ -2,6 +2,18 @@ package org.webbitserver.asyncio;
 
 public class AsyncIO {
 
+	// Flags
+	public static int READ               = 0x0000;
+	public static int WRITE              = 0x0001;
+	public static int READ_WRITE         = 0x0002;
+	public static int APPEND             = 0x0008;
+	public static int SHARED_LOCK        = 0x0010;
+	public static int EXCLUSIVE_LOCK     = 0x0020;
+	public static int NO_FOLLOW_SYMLINKS = 0x0100;
+	public static int CREATE             = 0x0200;
+	public static int TRUNCATE           = 0x0400;
+	public static int EXCLUSIVE          = 0x0800;
+		
 	static {
 		init();
 	}
@@ -76,6 +88,9 @@ public class AsyncIO {
 	 */
 	public static native int numThreads();
 
+	public static native void open(String path, int flags, int mode, int priority, AioCallback callback);
+	public static native void close(int fd, int priority, AioCallback callback);
+	public static native void unlink(String path, int priority, AioCallback callback);
 	public static native void mkdir(String path, int mode, int priority, AioCallback callback);
 	public static native void rmdir(String path, int priority, AioCallback callback);
 
