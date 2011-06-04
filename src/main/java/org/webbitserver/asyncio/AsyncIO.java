@@ -17,6 +17,7 @@ public class AsyncIO {
 	 *
 	 * <p>A typical event loop may look like this:
 	 * <pre>
+	 * // Note: If this actually is your event loop, just call flush() instead.
 	 * while (numRequests() &gt; 0) {
 	 *   block(); // Don't bother looping unless there's something to do
 	 *   poll(); // Process events (if they exist)
@@ -36,6 +37,17 @@ public class AsyncIO {
 	 * there may be nothing to do.
 	 */
 	public static native int block();
+
+	/**
+	 * Wait until all requests have been processed, then
+	 * return.
+	 */
+	public static void flush() {
+		while (numRequests() > 0) {
+			block();
+			poll();
+		}
+	}
 
 	/**
 	 * This is a standard POSIX file descriptor that can be used
