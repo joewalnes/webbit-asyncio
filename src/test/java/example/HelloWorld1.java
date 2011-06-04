@@ -12,9 +12,9 @@ public class HelloWorld1 {
 
     System.load(new File("build/libwebbit-asyncio.jnilib").getAbsolutePath());
 
-    mkdir("/tmp/foo", 0750, new AioCallback() {
+    mkdir("/tmp/foo", 0750, 0, new AioCallback() {
       public void complete(AioRequest r) {
-        rmdir("/tmp/foo", new AioCallback() {
+        rmdir("/tmp/foo", 0, new AioCallback() {
 					public void complete(AioRequest r) {
 						System.out.println("done");
 					}
