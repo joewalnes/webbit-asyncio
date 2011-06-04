@@ -1,11 +1,13 @@
-Event based asynchronous Java IO library - built on libeio
-http://software.schmorp.de/pkg/libeio.html
+Webbit AsyncIO
+==============
+
+Event based asynchronous Java IO library - built on [libeio](http://software.schmorp.de/pkg/libeio.html)
 
 __ This is a work in progress - not even remotely functional yet __
 
 Why?
 
-Webbit is inspired by NodeJS <http://nodejs.org/> - a single event loop
+Webbit is inspired by [NodeJS](http://nodejs.org/) - a single event loop
 of non-blocking calls. It makes it very easy to build scalable servers
 that deal with concurrent users, without having to worry about the woes
 of locking and synchronization. The model works.
@@ -28,22 +30,28 @@ threads and offload the IO tasks to those, invoking callbacks when done.
 
 The API will look something like this:
 
-  AIO aio = new AIO(executor); // pass in java.lang.concurrent.Executor
-                               // that all result callbacks will be
-                               // executed on.
+    AIO aio = new AIO(executor); // pass in java.lang.concurrent.Executor
+                                 // that all result callbacks will be
+                                 // executed on.
+    
+    aio.open("/some/file", AIO.READ, new FileCallback() { // doesn't block
+      public void complete(AioFile file) {
+        file.readLines(new LineCallback() { // this doesn't block either
+          public void processLine(String line) {
+            // do something
+          }
+        });
+      }
+    });
+    
+    executor.runLoop(); // process all IO tasks.
+                        // alternatively, if you have your own event loop
+                        // you can process events on the queue one at a
+                        // time.
 
-  aio.open("/some/file", AIO.READ, new FileCallback() { // doesn't block
-    public void complete(AioFile file) {
-      file.readLines(new LineCallback() { // this doesn't block either
-        public void processLine(String line) {
-          // do something
-        }
-      });
-    }
-  });
+Yeah, it's a bit verbose in Java, but it works. Alternative JVM languages (such as Clojure, Scala, Groovy, JRuby, Jython, etc) can condense the code. With Java 8 lambdas, the above code will look like this:
 
-  executor.runLoop(); // process all IO tasks.
-                      // alternatively, if you have your own event loop
-                      // you can process events on the queue one at a
-                      // time.
 
+    AIO aio = new AIO(executor); 
+    aio.open("/some/file", AIO.READ, #{file -> file.readLines(#{line -> /* do something */})});
+    executor.runLoop();
