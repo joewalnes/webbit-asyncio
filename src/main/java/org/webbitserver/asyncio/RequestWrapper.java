@@ -1,6 +1,8 @@
 package org.webbitserver.asyncio;
 
-public class RequestWrapper implements AioRequest {
+public class RequestWrapper implements AioRequest,
+                                       AioRequest.Open,
+                                       AioRequest.Mkdir {
 
   private final long ptr;
 
@@ -12,9 +14,14 @@ public class RequestWrapper implements AioRequest {
     return ptr;
   }
 
-  @Override
+  @Override // AioRequest
   public boolean success() {
     return result(ptr) > -1;
+  }
+
+  @Override // AioRequest.{Open,Mkdir}
+  public int getFileDescriptor() {
+    return int1(ptr);
   }
 
   /** result of syscall, e.g. result = read (... */

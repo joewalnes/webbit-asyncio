@@ -1,5 +1,5 @@
 package org.webbitserver.asyncio;
 
-public interface AioCallback {
-	void complete(AioRequest request);
+public interface AioCallback<T extends AioRequest> {
+	void complete(T request);
 }

@@ -88,10 +88,10 @@ public class AsyncIO {
 	 */
 	public static native int numThreads();
 
-	public static native void open(String path, int flags, int mode, int priority, AioCallback callback);
-	public static native void close(int fd, int priority, AioCallback callback);
-	public static native void unlink(String path, int priority, AioCallback callback);
-	public static native void mkdir(String path, int mode, int priority, AioCallback callback);
-	public static native void rmdir(String path, int priority, AioCallback callback);
+	public static native void open(String path, int flags, int mode, int priority, AioCallback<AioRequest.Open> callback);
+	public static native void close(int fd, int priority, AioCallback<AioRequest> callback);
+	public static native void unlink(String path, int priority, AioCallback<AioRequest> callback);
+	public static native void mkdir(String path, int mode, int priority, AioCallback<AioRequest.Mkdir> callback);
+	public static native void rmdir(String path, int priority, AioCallback<AioRequest> callback);
 
 }
