@@ -19,9 +19,24 @@ public class RequestWrapper implements AioRequest,
     return result(ptr) > -1;
   }
 
+  @Override // AioRequest
+  public int getResult() {
+    return result(ptr);
+  }
+
+  @Override // AioRequest
+  public int getErrorNo() {
+    return errorno(ptr);
+  }
+
   @Override // AioRequest.{Open,Mkdir}
   public int getFileDescriptor() {
     return int1(ptr);
+  }
+
+  @Override // AioRequest.{Open,Mkdir}
+  public int getFileMode() {
+    return (int)int2(ptr);
   }
 
   /** result of syscall, e.g. result = read (... */
