@@ -100,73 +100,206 @@ int completion_callback(eio_req *req) {
 	free_java_callback(cb);
 }
 
-// eio_req *eio_nop       (int pri, eio_cb cb, void *data); /* does nothing except go through the whole process */
-// eio_req *eio_busy      (eio_tstamp delay, int pri, eio_cb cb, void *data); /* ties a thread for this long, simulating busyness */
-// eio_req *eio_sync      (int pri, eio_cb cb, void *data);
-// eio_req *eio_fsync     (int fd, int pri, eio_cb cb, void *data);
-// eio_req *eio_fdatasync (int fd, int pri, eio_cb cb, void *data);
-// eio_req *eio_msync     (void *addr, size_t length, int flags, int pri, eio_cb cb, void *data);
-// eio_req *eio_mtouch    (void *addr, size_t length, int flags, int pri, eio_cb cb, void *data);
-// eio_req *eio_mlock     (void *addr, size_t length, int pri, eio_cb cb, void *data);
-// eio_req *eio_mlockall  (int flags, int pri, eio_cb cb, void *data);
-// eio_req *eio_sync_file_range (int fd, off_t offset, size_t nbytes, unsigned int flags, int pri, eio_cb cb, void *data);
+// Most of the remaining code is boilerplate, wiring Java native
+// calls to their C counterparts. I considered code-generating these,
+// but there were enough subtle differences that it didn't seem worthwhile.
+// -jw
+
+JNI_API(void, nop)(JNIEnv *env, jobject self, jint priority, jobject callback) {
+	eio_nop(priority, completion_callback, alloc_java_callback(env, callback));
+}
+
+JNI_API(void, busy)(JNIEnv *env, jobject self, jint delay, jint priority, jobject callback) {
+	eio_busy(delay, priority, completion_callback, alloc_java_callback(env, callback));
+}
+
+JNI_API(void, sync)(JNIEnv *env, jobject self, jint priority, jobject callback) {
+	eio_sync(priority, completion_callback, alloc_java_callback(env, callback));
+}
+
+JNI_API(void, fsync)(JNIEnv *env, jobject self, jint fd, jint priority, jobject callback) {
+	eio_fsync(fd, priority, completion_callback, alloc_java_callback(env, callback));
+}
+
+JNI_API(void, fdatasync)(JNIEnv *env, jobject self, jint fd, jint priority, jobject callback) {
+	eio_fdatasync(fd, priority, completion_callback, alloc_java_callback(env, callback));
+}
+
+JNI_API(void, msync)(JNIEnv *env, jobject self, jlong address, jint length, jint flags, jint priority, jobject callback) {
+	eio_msync((void*)address, length, flags, priority, completion_callback, alloc_java_callback(env, callback));
+}
+
+JNI_API(void, mtouch)(JNIEnv *env, jobject self, jlong address, jint length, jint flags, jint priority, jobject callback) {
+	eio_mtouch((void*)address, length, flags, priority, completion_callback, alloc_java_callback(env, callback));
+}
+
+JNI_API(void, mlock)(JNIEnv *env, jobject self, jlong address, jint length, jint priority, jobject callback) {
+	eio_mlock((void*)address, length, priority, completion_callback, alloc_java_callback(env, callback));
+}
+
+JNI_API(void, mlockall)(JNIEnv *env, jobject self, jint flags, jint priority, jobject callback) {
+	eio_mlockall(flags, priority, completion_callback, alloc_java_callback(env, callback));
+}
+
+JNI_API(void, sync_file_range)(JNIEnv *env, jobject self, jint offset, jint nbytes, jint flags, jint priority, jobject callback) {
+	eio_sync_file_range(flags, offset, nbytes, flags, priority, completion_callback, alloc_java_callback(env, callback));
+}
 
 JNI_API(void, close)(JNIEnv *env, jobject self, jint fd, jint priority, jobject callback) {
 	eio_close(fd, priority, completion_callback, alloc_java_callback(env, callback));
 }
 
-// eio_req *eio_readahead (int fd, off_t offset, size_t length, int pri, eio_cb cb, void *data);
-// eio_req *eio_read      (int fd, void *buf, size_t length, off_t offset, int pri, eio_cb cb, void *data);
-// eio_req *eio_write     (int fd, void *buf, size_t length, off_t offset, int pri, eio_cb cb, void *data);
-// eio_req *eio_fstat     (int fd, int pri, eio_cb cb, void *data); /* stat buffer=ptr2 allocated dynamically */
-// eio_req *eio_fstatvfs  (int fd, int pri, eio_cb cb, void *data); /* stat buffer=ptr2 allocated dynamically */
-// eio_req *eio_futime    (int fd, eio_tstamp atime, eio_tstamp mtime, int pri, eio_cb cb, void *data);
-// eio_req *eio_ftruncate (int fd, off_t offset, int pri, eio_cb cb, void *data);
-// eio_req *eio_fchmod    (int fd, mode_t mode, int pri, eio_cb cb, void *data);
-// eio_req *eio_fchown    (int fd, uid_t uid, gid_t gid, int pri, eio_cb cb, void *data);
-// eio_req *eio_dup2      (int fd, int fd2, int pri, eio_cb cb, void *data);
-// eio_req *eio_sendfile  (int out_fd, int in_fd, off_t in_offset, size_t length, int pri, eio_cb cb, void *data);
-
-JNI_API(void, open)(JNIEnv *env, jobject self, jstring path, jint flag, jint mode, jint priority, jobject callback) {
-	const char* pathChars = (*env)->GetStringUTFChars(env, path, 0);
-	eio_open(pathChars, flag, mode, priority, completion_callback, alloc_java_callback(env, callback));
-	(*env)->ReleaseStringUTFChars(env, path, pathChars);
+JNI_API(void, readahead)(JNIEnv *env, jobject self, jint fd, jint offset, jint length, jint priority, jobject callback) {
+	eio_readahead(fd, offset, length, priority, completion_callback, alloc_java_callback(env, callback));
 }
 
-// eio_req *eio_utime     (const char *path, eio_tstamp atime, eio_tstamp mtime, int pri, eio_cb cb, void *data);
-// eio_req *eio_truncate  (const char *path, off_t offset, int pri, eio_cb cb, void *data);
-// eio_req *eio_chown     (const char *path, uid_t uid, gid_t gid, int pri, eio_cb cb, void *data);
-// eio_req *eio_chmod     (const char *path, mode_t mode, int pri, eio_cb cb, void *data);
+JNI_API(void, read)(JNIEnv *env, jobject self, jint fd, jlong buffer, jint length, jint offset, jint priority, jobject callback) {
+	eio_read(fd, (void*)buffer, length, offset, priority, completion_callback, alloc_java_callback(env, callback));
+}
+
+JNI_API(void, write)(JNIEnv *env, jobject self, jint fd, jlong buffer, jint length, jint offset, jint priority, jobject callback) {
+	eio_write(fd, (void*)buffer, length, offset, priority, completion_callback, alloc_java_callback(env, callback));
+}
+
+JNI_API(void, fstat)(JNIEnv *env, jobject self, jint fd, jint priority, jobject callback) {
+	eio_fstat(fd, priority, completion_callback, alloc_java_callback(env, callback));
+}
+
+JNI_API(void, fstatvfs)(JNIEnv *env, jobject self, jint fd, jint priority, jobject callback) {
+	eio_fstatvfs(fd, priority, completion_callback, alloc_java_callback(env, callback));
+}
+
+JNI_API(void, futime)(JNIEnv *env, jobject self, jint fd, jlong atime, jlong mtime, jint priority, jobject callback) {
+	eio_futime(fd, atime, mtime, priority, completion_callback, alloc_java_callback(env, callback));
+}
+
+JNI_API(void, ftruncate)(JNIEnv *env, jobject self, jint fd, jint offset, jint priority, jobject callback) {
+	eio_ftruncate(fd, offset, priority, completion_callback, alloc_java_callback(env, callback));
+}
+
+JNI_API(void, fchmod)(JNIEnv *env, jobject self, jint fd, jint mode, jint priority, jobject callback) {
+	eio_fchmod(fd, mode, priority, completion_callback, alloc_java_callback(env, callback));
+}
+
+JNI_API(void, fchown)(JNIEnv *env, jobject self, jint fd, jint uid, jint gid, jint priority, jobject callback) {
+	eio_fchown(fd, uid, gid, priority, completion_callback, alloc_java_callback(env, callback));
+}
+
+JNI_API(void, dup2)(JNIEnv *env, jobject self, jint fd, jint fd2, jint priority, jobject callback) {
+	eio_dup2(fd, fd2, priority, completion_callback, alloc_java_callback(env, callback));
+}
+
+JNI_API(void, sendfile)(JNIEnv *env, jobject self, jint out_fd, jint in_fd, jint offset, jint length, jint priority, jobject callback) {
+	eio_sendfile(out_fd, in_fd, offset, length, priority, completion_callback, alloc_java_callback(env, callback));
+}
+
+JNI_API(void, open)(JNIEnv *env, jobject self, jstring path, jint flags, jint mode, jint priority, jobject callback) {
+	const char* path_chars = (*env)->GetStringUTFChars(env, path, 0);
+	eio_open(path_chars, flags, mode, priority, completion_callback, alloc_java_callback(env, callback));
+	(*env)->ReleaseStringUTFChars(env, path, path_chars);
+}
+
+JNI_API(void, utime)(JNIEnv *env, jobject self, jstring path, jlong atime, jlong mtime, jint priority, jobject callback) {
+	const char* path_chars = (*env)->GetStringUTFChars(env, path, 0);
+	eio_utime(path_chars, atime, mtime, priority, completion_callback, alloc_java_callback(env, callback));
+	(*env)->ReleaseStringUTFChars(env, path, path_chars);
+}
+
+JNI_API(void, truncate)(JNIEnv *env, jobject self, jstring path, jint offset, jint priority, jobject callback) {
+	const char* path_chars = (*env)->GetStringUTFChars(env, path, 0);
+	eio_truncate(path_chars, offset, priority, completion_callback, alloc_java_callback(env, callback));
+	(*env)->ReleaseStringUTFChars(env, path, path_chars);
+}
+
+JNI_API(void, chown)(JNIEnv *env, jobject self, jstring path, jint uid, jint gid, jint priority, jobject callback) {
+	const char* path_chars = (*env)->GetStringUTFChars(env, path, 0);
+	eio_chown(path_chars, uid, gid, priority, completion_callback, alloc_java_callback(env, callback));
+	(*env)->ReleaseStringUTFChars(env, path, path_chars);
+}
+
+JNI_API(void, chmod)(JNIEnv *env, jobject self, jstring path, jint mode, jint priority, jobject callback) {
+	const char* path_chars = (*env)->GetStringUTFChars(env, path, 0);
+	eio_chmod(path_chars, mode, priority, completion_callback, alloc_java_callback(env, callback));
+	(*env)->ReleaseStringUTFChars(env, path, path_chars);
+}
 
 JNI_API(void, mkdir)(JNIEnv *env, jobject self, jstring path, jint mode, jint priority, jobject callback) {
-	const char* pathChars = (*env)->GetStringUTFChars(env, path, 0);
-	eio_mkdir(pathChars, mode, priority, completion_callback, alloc_java_callback(env, callback));
-	(*env)->ReleaseStringUTFChars(env, path, pathChars);
+	const char* path_chars = (*env)->GetStringUTFChars(env, path, 0);
+	eio_mkdir(path_chars, mode, priority, completion_callback, alloc_java_callback(env, callback));
+	(*env)->ReleaseStringUTFChars(env, path, path_chars);
 }
 
-// eio_req *eio_readdir   (const char *path, int flags, int pri, eio_cb cb, void *data); /* result=ptr2 allocated dynamically */
+JNI_API(void, readdir)(JNIEnv *env, jobject self, jstring path, jint flags, jint priority, jobject callback) {
+	const char* path_chars = (*env)->GetStringUTFChars(env, path, 0);
+	eio_readdir(path_chars, flags, priority, completion_callback, alloc_java_callback(env, callback));
+	(*env)->ReleaseStringUTFChars(env, path, path_chars);
+}
 
 JNI_API(void, rmdir)(JNIEnv *env, jobject self, jstring path, jint priority, jobject callback) {
-	const char* pathChars = (*env)->GetStringUTFChars(env, path, 0);
-	eio_rmdir(pathChars, priority, completion_callback, alloc_java_callback(env, callback));
-	(*env)->ReleaseStringUTFChars(env, path, pathChars);
+	const char* path_chars = (*env)->GetStringUTFChars(env, path, 0);
+	eio_rmdir(path_chars, priority, completion_callback, alloc_java_callback(env, callback));
+	(*env)->ReleaseStringUTFChars(env, path, path_chars);
 }
 
 JNI_API(void, unlink)(JNIEnv *env, jobject self, jstring path, jint priority, jobject callback) {
-	const char* pathChars = (*env)->GetStringUTFChars(env, path, 0);
-	eio_unlink(pathChars, priority, completion_callback, alloc_java_callback(env, callback));
-	(*env)->ReleaseStringUTFChars(env, path, pathChars);
+	const char* path_chars = (*env)->GetStringUTFChars(env, path, 0);
+	eio_unlink(path_chars, priority, completion_callback, alloc_java_callback(env, callback));
+	(*env)->ReleaseStringUTFChars(env, path, path_chars);
 }
 
-// eio_req *eio_readlink  (const char *path, int pri, eio_cb cb, void *data); /* result=ptr2 allocated dynamically */
-// eio_req *eio_stat      (const char *path, int pri, eio_cb cb, void *data); /* stat buffer=ptr2 allocated dynamically */
-// eio_req *eio_lstat     (const char *path, int pri, eio_cb cb, void *data); /* stat buffer=ptr2 allocated dynamically */
-// eio_req *eio_statvfs   (const char *path, int pri, eio_cb cb, void *data); /* stat buffer=ptr2 allocated dynamically */
-// eio_req *eio_mknod     (const char *path, mode_t mode, dev_t dev, int pri, eio_cb cb, void *data);
-// eio_req *eio_link      (const char *path, const char *new_path, int pri, eio_cb cb, void *data);
-// eio_req *eio_symlink   (const char *path, const char *new_path, int pri, eio_cb cb, void *data);
-// eio_req *eio_rename    (const char *path, const char *new_path, int pri, eio_cb cb, void *data);
-// eio_req *eio_custom    (eio_cb execute, int pri, eio_cb cb, void *data);
+JNI_API(void, readlink)(JNIEnv *env, jobject self, jstring path, jint priority, jobject callback) {
+	const char* path_chars = (*env)->GetStringUTFChars(env, path, 0);
+	eio_readlink(path_chars, priority, completion_callback, alloc_java_callback(env, callback));
+	(*env)->ReleaseStringUTFChars(env, path, path_chars);
+}
+
+JNI_API(void, stat)(JNIEnv *env, jobject self, jstring path, jint priority, jobject callback) {
+	const char* path_chars = (*env)->GetStringUTFChars(env, path, 0);
+	eio_stat(path_chars, priority, completion_callback, alloc_java_callback(env, callback));
+	(*env)->ReleaseStringUTFChars(env, path, path_chars);
+}
+
+JNI_API(void, lstat)(JNIEnv *env, jobject self, jstring path, jint priority, jobject callback) {
+	const char* path_chars = (*env)->GetStringUTFChars(env, path, 0);
+	eio_lstat(path_chars, priority, completion_callback, alloc_java_callback(env, callback));
+	(*env)->ReleaseStringUTFChars(env, path, path_chars);
+}
+
+JNI_API(void, statvfs)(JNIEnv *env, jobject self, jstring path, jint priority, jobject callback) {
+	const char* path_chars = (*env)->GetStringUTFChars(env, path, 0);
+	eio_statvfs(path_chars, priority, completion_callback, alloc_java_callback(env, callback));
+	(*env)->ReleaseStringUTFChars(env, path, path_chars);
+}
+
+JNI_API(void, mknod)(JNIEnv *env, jobject self, jstring path, jint mode, jint dev, jint priority, jobject callback) {
+	const char* path_chars = (*env)->GetStringUTFChars(env, path, 0);
+	eio_mknod(path_chars, mode, dev, priority, completion_callback, alloc_java_callback(env, callback));
+	(*env)->ReleaseStringUTFChars(env, path, path_chars);
+}
+
+JNI_API(void, link)(JNIEnv *env, jobject self, jstring path, jstring new_path, jint priority, jobject callback) {
+	const char* path_chars = (*env)->GetStringUTFChars(env, path, 0);
+	const char* new_path_chars = (*env)->GetStringUTFChars(env, path, 0);
+	eio_link(path_chars, new_path_chars, priority, completion_callback, alloc_java_callback(env, callback));
+	(*env)->ReleaseStringUTFChars(env, new_path, new_path_chars);
+	(*env)->ReleaseStringUTFChars(env, path, path_chars);
+}
+
+JNI_API(void, symlink)(JNIEnv *env, jobject self, jstring path, jstring new_path, jint priority, jobject callback) {
+	const char* path_chars = (*env)->GetStringUTFChars(env, path, 0);
+	const char* new_path_chars = (*env)->GetStringUTFChars(env, path, 0);
+	eio_symlink(path_chars, new_path_chars, priority, completion_callback, alloc_java_callback(env, callback));
+	(*env)->ReleaseStringUTFChars(env, new_path, new_path_chars);
+	(*env)->ReleaseStringUTFChars(env, path, path_chars);
+}
+
+JNI_API(void, rename)(JNIEnv *env, jobject self, jstring path, jstring new_path, jint priority, jobject callback) {
+	const char* path_chars = (*env)->GetStringUTFChars(env, path, 0);
+	const char* new_path_chars = (*env)->GetStringUTFChars(env, path, 0);
+	eio_rename(path_chars, new_path_chars, priority, completion_callback, alloc_java_callback(env, callback));
+	(*env)->ReleaseStringUTFChars(env, new_path, new_path_chars);
+	(*env)->ReleaseStringUTFChars(env, path, path_chars);
+}
 
 JNI_REQ(jint, result)(JNIEnv *env, jobject self, jlong ptr) {
   eio_req* req = (eio_req*)ptr;
