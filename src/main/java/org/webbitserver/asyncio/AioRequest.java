@@ -17,14 +17,4 @@ public interface AioRequest {
    */
   int getErrorNo();
 
-  interface Open extends AioRequest {
-    int getFileDescriptor();
-    int getFileMode();
-  }
-
-  interface Mkdir extends AioRequest {
-    int getFileDescriptor();
-    int getFileMode();
-  }
-
 }

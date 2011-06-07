@@ -28,8 +28,8 @@ public class Demo {
 
 //    utime("eio-test-dir", 12345.678, 23456.789, 0, callback("utime"));
 //    futime(last_fd, 92345.678, 93456.789, 0, callback("futime"));
-    chown("eio-test-dir", getuid (), getgid (), 0, callback("chown"));
-    fchown(last_fd, getuid (), getgid (), 0, callback("fchown"));
+    chown("eio-test-dir", getuid(), getgid(), 0, callback("chown"));
+    fchown(last_fd, getuid(), getgid(), 0, callback("fchown"));
     fchmod(last_fd, 0723, 0, callback("fchmod"));
     readdir("eio-test-dir", 0, 0, readDirCallback("readdir"));
     readdir("/nonexistant", 0, 0, readDirCallback("readdir"));
@@ -37,8 +37,8 @@ public class Demo {
 //    write(last_fd, "test\nfail\n", 10, 4, 0, callback("write"));
     flush();
 
-    read(last_fd, 0, 8, 0, PRI_DEFAULT, readCallback("read"));
-    readlink("eio-test-dir/eio-symlink", 0, callback("readlink"));
+    //read(last_fd, 0, 8, 0, PRI_DEFAULT, readCallback("read"));
+   // readlink("eio-test-dir/eio-symlink", 0, callback("readlink"));
     flush();
 
     dup2(1, 2, PRI_DEFAULT, callback("dup")); // dup stdout to stderr
@@ -59,19 +59,19 @@ public class Demo {
     flush();
 
     close(last_fd, 0, callback("close"));
-    link("eio-test-dir/eio-test-file", "eio-test-dir/eio-test-file-2", 0, callback("link"));
+    //link("eio-test-dir/eio-test-file", "eio-test-dir/eio-test-file-2", 0, callback("link"));
     flush();
 
     rename("eio-test-dir/eio-test-file", "eio-test-dir/eio-test-file-renamed", 0, callback("rename"));
     flush();
 
-    unlink("eio-test-dir/eio-fifo", 0, callback("unlink"));
-    unlink("eio-test-dir/eio-symlink", 0, callback("unlink"));
-    unlink("eio-test-dir/eio-test-file-2", 0, callback("unlink"));
-    unlink("eio-test-dir/eio-test-file-renamed", 0, callback("unlink"));
+    //unlink("eio-test-dir/eio-fifo", 0, callback("unlink"));
+    //unlink("eio-test-dir/eio-symlink", 0, callback("unlink"));
+    //unlink("eio-test-dir/eio-test-file-2", 0, callback("unlink"));
+    //unlink("eio-test-dir/eio-test-file-renamed", 0, callback("unlink"));
     flush();
 
-    rmdir("eio-test-dir", 0, callback("rmdir"));
+    //rmdir("eio-test-dir", 0, callback("rmdir"));
     flush();
 
   }
@@ -117,22 +117,24 @@ public class Demo {
       @Override
       public void complete(AioRequest req) {
         System.out.println("Complete: " + msg);
-        if (!req.success()) {
-          throw new RuntimeException("req.success() != true");
+        if (req.getResult() < 0) {
+          System.out.println(" - dir does not exist");
+        } else {
+          System.out.println(" - files: " + req.getResult());
         }
       }
     };
   }
 
   public static AioCallback openCallback(final String msg) {
-    return new AioCallback<AioRequest.Open>() {
+    return new AioCallback<AioRequest>() {
       @Override
-      public void complete(AioRequest.Open req) {
-        System.out.println("Complete: " + msg + " (fd=" + req.getFileDescriptor() + ")");
+      public void complete(AioRequest req) {
+        System.out.println("Complete: " + msg + " (fd=" + req.getResult() + ")");
         if (!req.success()) {
           throw new RuntimeException("req.success() != true");
         }
-        last_fd = req.getFileDescriptor();
+        last_fd = req.getResult();
       }
     };
   }

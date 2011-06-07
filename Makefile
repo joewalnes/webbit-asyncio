@@ -6,7 +6,7 @@ all: dist/$(LIBRARY).jar dist/$(LIBRARY)-tests.jar
 .PHONY: all
 
 clean:
-	rm -rf build dist
+	rm -rf build dist eio-test-dir test
 .PHONY: clean
 
 clobber: clean
@@ -48,6 +48,7 @@ example: dist/$(LIBRARY)-tests.jar
 .PHONY: example
 
 demo: dist/$(LIBRARY)-tests.jar
+	-rm -rf eio-test-dir test
 	java -cp dist/$(LIBRARY).jar:dist/$(LIBRARY)-tests.jar example.Demo
 .PHONY: example
 

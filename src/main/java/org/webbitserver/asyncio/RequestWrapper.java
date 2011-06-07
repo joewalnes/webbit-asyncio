@@ -1,8 +1,6 @@
 package org.webbitserver.asyncio;
 
-public class RequestWrapper implements AioRequest,
-                                       AioRequest.Open,
-                                       AioRequest.Mkdir {
+public class RequestWrapper implements AioRequest {
 
   private final long ptr;
 
@@ -27,16 +25,6 @@ public class RequestWrapper implements AioRequest,
   @Override // AioRequest
   public int getErrorNo() {
     return errorno(ptr);
-  }
-
-  @Override // AioRequest.{Open,Mkdir}
-  public int getFileDescriptor() {
-    return int1(ptr);
-  }
-
-  @Override // AioRequest.{Open,Mkdir}
-  public int getFileMode() {
-    return (int)int2(ptr);
   }
 
   /** result of syscall, e.g. result = read (... */

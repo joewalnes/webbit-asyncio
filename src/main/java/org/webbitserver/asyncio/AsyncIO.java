@@ -121,13 +121,13 @@ public class AsyncIO {
 	public static native void fchown(int fd, int uid, int gid, int priority, AioCallback<AioRequest> callback);
 	public static native void dup2(int fd, int fd2, int priority, AioCallback<AioRequest> callback);
 	public static native void sendfile(int outFd, int inFd, int offset, int length, int priority, AioCallback<AioRequest> callback);
-	public static native void open(String path, int flags, int mode, int priority, AioCallback<AioRequest.Open> callback);
+	public static native void open(String path, int flags, int mode, int priority, AioCallback<AioRequest> callback);
 	public static native void utime(String path, int mode, int priority, AioCallback<AioRequest> callback);
 	public static native void truncate(String path, int offset, int priority, AioCallback<AioRequest> callback);
 	public static native void chown(String path, int uid, int gid, int priority, AioCallback<AioRequest> callback);
 	public static native void chmod(String path, int mode, int priority, AioCallback<AioRequest> callback);
-	public static native void mkdir(String path, int mode, int priority, AioCallback<AioRequest.Mkdir> callback);
-	public static native void readdir(String path, int flags, int priority, AioCallback<AioRequest.Mkdir> callback);
+	public static native void mkdir(String path, int mode, int priority, AioCallback<AioRequest> callback);
+	public static native void readdir(String path, int flags, int priority, AioCallback<AioRequest> callback);
 	public static native void rmdir(String path, int priority, AioCallback<AioRequest> callback);
 	public static native void unlink(String path, int priority, AioCallback<AioRequest> callback);
 	public static native void readlink(String path, int priority, AioCallback<AioRequest> callback);
