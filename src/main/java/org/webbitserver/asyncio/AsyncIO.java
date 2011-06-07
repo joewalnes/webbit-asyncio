@@ -88,8 +88,12 @@ public class AsyncIO {
 	 */
 	public static native int numThreads();
 
-  // eio_req *eio_nop       (int pri, eio_cb cb, void *data); /* does nothing except go through the whole process */
-  // eio_req *eio_busy      (eio_tstamp delay, int pri, eio_cb cb, void *data); /* ties a thread for this long, simulating busyness */
+  /** Does nothing except go through the entire process. */
+	public static native void nop(int priority, AioCallback<AioRequest> callback);
+
+  /** Ties a thread for this long, simulating business. */
+	public static native void busy(int delay, int priority, AioCallback<AioRequest> callback);
+
 	public static native void sync(int priority, AioCallback<AioRequest> callback);
 	public static native void fsync(int fd, int priority, AioCallback<AioRequest> callback);
 	public static native void fdatasync(int fd,int priority, AioCallback<AioRequest> callback);
