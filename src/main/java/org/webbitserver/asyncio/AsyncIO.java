@@ -13,7 +13,14 @@ public class AsyncIO {
 	public static int CREATE             = 0x0200;
 	public static int TRUNCATE           = 0x0400;
 	public static int EXCLUSIVE          = 0x0800;
-		
+	
+  // Priorities
+  public static int PRI_MIN            = -4;
+  public static int PRI_MAX            = 4;
+  public static int PRI_DEFAULT        = 0;
+
+  public static int S_IFIFO            = 0010000;
+
 	static {
 		init();
 	}
@@ -106,9 +113,7 @@ public class AsyncIO {
 	public static native void readahead(int fd, int offset, int length, int priority, AioCallback<AioRequest> callback);
 	public static native void read(int fd, long buffer, int length, int offset, int priority, AioCallback<AioRequest> callback);
 	public static native void write(int fd, long buffer, int length, int offset, int priority, AioCallback<AioRequest> callback);
-	/** stat buffer=ptr2 allocated dynamically */
-  public static native void fstat(int fd, int priority, AioCallback<AioRequest> callback);
-	/** stat buffer=ptr2 allocated dynamically */
+	public static native void fstat(int fd, int priority, AioCallback<AioRequest> callback);
 	public static native void fstatvfs(int fd, int priority, AioCallback<AioRequest> callback);
 	public static native void futime(int fd, long atime, long mtime, int priority, AioCallback<AioRequest> callback);
 	public static native void ftruncate(int fd, int offset, int priority, AioCallback<AioRequest> callback);
@@ -122,17 +127,12 @@ public class AsyncIO {
 	public static native void chown(String path, int uid, int gid, int priority, AioCallback<AioRequest> callback);
 	public static native void chmod(String path, int mode, int priority, AioCallback<AioRequest> callback);
 	public static native void mkdir(String path, int mode, int priority, AioCallback<AioRequest.Mkdir> callback);
-	/** result=ptr2 allocated dynamically */
-  public static native void readdir(String path, int flags, int priority, AioCallback<AioRequest.Mkdir> callback);
+	public static native void readdir(String path, int flags, int priority, AioCallback<AioRequest.Mkdir> callback);
 	public static native void rmdir(String path, int priority, AioCallback<AioRequest> callback);
 	public static native void unlink(String path, int priority, AioCallback<AioRequest> callback);
-	/* result=ptr2 allocated dynamically */
-  public static native void readlink(String path, int priority, AioCallback<AioRequest> callback);
-	/** stat buffer=ptr2 allocated dynamically */
+	public static native void readlink(String path, int priority, AioCallback<AioRequest> callback);
 	public static native void stat(String path, int priority, AioCallback<AioRequest> callback);
-	/** stat buffer=ptr2 allocated dynamically */
 	public static native void lstat(String path, int priority, AioCallback<AioRequest> callback);
-	/** stat buffer=ptr2 allocated dynamically */
 	public static native void statvfs(String path, int priority, AioCallback<AioRequest> callback);
 	public static native void mknod(String path, int mode, int dev, int priority, AioCallback<AioRequest> callback);
 	public static native void link(String path, String newPath, int priority, AioCallback<AioRequest> callback);

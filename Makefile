@@ -47,3 +47,8 @@ example: dist/$(LIBRARY)-tests.jar
 	java -cp dist/$(LIBRARY).jar:dist/$(LIBRARY)-tests.jar example.HelloWorld1
 .PHONY: example
 
+demo: dist/$(LIBRARY)-tests.jar
+	java -cp dist/$(LIBRARY).jar:dist/$(LIBRARY)-tests.jar example.Demo
+.PHONY: example
+
+
