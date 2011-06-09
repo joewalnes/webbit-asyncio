@@ -130,7 +130,7 @@ public class Demo {
   }
 
   public static AioCallback openCallback(final String msg) {
-    return new AioCallback<AioRequest>() {
+    return new AioCallback() {
       @Override
       public void complete(AioRequest req) {
         System.out.println("Complete: " + msg + " (fd=" + req.getResult() + ")");
