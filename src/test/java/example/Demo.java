@@ -5,6 +5,7 @@ import org.webbitserver.asyncio.AioRequest;
 import org.webbitserver.asyncio.AioCallback;
 
 import static org.webbitserver.asyncio.AsyncIO.*;
+import static org.webbitserver.asyncio.NativeFunctions.*;
 
 public class Demo {
 
@@ -34,7 +35,9 @@ public class Demo {
     readdir("eio-test-dir", 0, 0, readDirCallback("readdir"));
     readdir("/nonexistant", 0, 0, readDirCallback("readdir"));
     fstat(last_fd, 0, statCallback("stat"));
-//    write(last_fd, "test\nfail\n", 10, 4, 0, callback("write"));
+    long buffer = nativeString("test\nfail\n");
+    write(last_fd, buffer, strlen(buffer), 4, 0, callback("write"));
+    free(buffer);
     flush();
 
     //read(last_fd, 0, 8, 0, PRI_DEFAULT, readCallback("read"));
