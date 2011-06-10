@@ -2,3 +2,4 @@ build
 dist
 eio-test-dir
 test
+test-asyncio

@@ -13,6 +13,7 @@ public class NativeFunctions {
   public static native int strncmp(long ptr1, long ptr2, int size);
 
   public static native String javaString(long ptr);
+  public static native String javaStringN(long ptr, int size);
 
   /**
    * Copies Java String to native C string.

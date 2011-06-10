@@ -39,6 +39,15 @@ JNI_FUNC(jstring, javaString)(JNIEnv *env, jobject self, jlong ptr) {
   return (*env)->NewStringUTF(env, (char*)ptr);
 }
 
+JNI_FUNC(jstring, javaStringN)(JNIEnv *env, jobject self, jlong ptr, jint size) {
+  char *truncated = malloc(size + 1);
+  strncpy(truncated, (char*)ptr, size);
+  truncated[size] = 0;
+  jstring result = (*env)->NewStringUTF(env, truncated);
+  free(truncated);
+  return result;
+}
+
 JNI_FUNC(jlong, nativeString)(JNIEnv *env, jobject self, jstring str) {
   jsize len = (*env)->GetStringLength(env, str);
   char *chars = malloc(len); // Callers are responsible for free()

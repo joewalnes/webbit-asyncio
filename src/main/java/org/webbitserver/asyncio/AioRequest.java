@@ -17,4 +17,9 @@ public interface AioRequest {
    */
   int getErrorNo();
 
+  /**
+   * Pointer to the data structure populated
+   * by the request (if applicable).
+   */
+  long getPointer();
 }

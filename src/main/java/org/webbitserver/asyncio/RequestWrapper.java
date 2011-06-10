@@ -12,19 +12,24 @@ public class RequestWrapper implements AioRequest {
     return ptr;
   }
 
-  @Override // AioRequest
+  @Override
   public boolean success() {
     return result(ptr) > -1;
   }
 
-  @Override // AioRequest
+  @Override
   public int getResult() {
     return result(ptr);
   }
 
-  @Override // AioRequest
+  @Override
   public int getErrorNo() {
     return errorno(ptr);
+  }
+
+  @Override
+  public long getPointer() {
+    return ptr2(ptr);
   }
 
   /** result of syscall, e.g. result = read (... */

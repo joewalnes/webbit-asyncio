@@ -10,7 +10,7 @@ all: dist/$(LIBRARY).jar test
 .PHONY: all
 
 clean:
-	rm -rf build dist eio-test-dir test
+	rm -rf build dist eio-test-dir test test-asyncio
 .PHONY: clean
 
 clobber: clean
@@ -59,6 +59,7 @@ demo: build/$(LIBRARY)-tests.jar
 # Run tests, and create .tests-pass if they succeed
 build/.tests-pass: build/$(LIBRARY)-tests.jar
 	@rm -f $@
+	-rm -rf test-asyncio
 	java -cp $(CLASSPATH):dist/$(LIBRARY).jar:build/$(LIBRARY)-tests.jar org.junit.runner.JUnitCore $(call extracttests,build/$(LIBRARY)-tests.jar)
 	@touch $@
 test: build/.tests-pass
