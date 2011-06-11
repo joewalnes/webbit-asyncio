@@ -67,11 +67,13 @@ struct java_data {
 	JNIEnv* env;
 	jobject java_callback;
 	jobject java_request;
+  int complete;
 };
 
 struct java_data *alloc_java_data(JNIEnv *env, jobject callback) {
 	struct java_data *data = (struct java_data*) malloc(sizeof(struct java_data));
   bzero(data, sizeof(data));
+  data->complete = 0;
 	data->env = env;
 	data->java_callback = (*env)->NewGlobalRef(env, callback);
 	return data;
@@ -79,6 +81,7 @@ struct java_data *alloc_java_data(JNIEnv *env, jobject callback) {
 
 int completion_callback(eio_req *req) {
 	struct java_data* data = (struct java_data*)(req->data);
+  data->complete = 1;
 	JNIEnv* env = data->env;
 
   // invoke java callback
@@ -353,6 +356,12 @@ JNI_API(jobject, rename)(JNIEnv *env, jobject self, jstring path, jstring new_pa
 	(*env)->ReleaseStringUTFChars(env, new_path, new_path_chars);
 	(*env)->ReleaseStringUTFChars(env, path, path_chars);
   return result;
+}
+
+JNI_REQ(jboolean, complete)(JNIEnv *env, jobject self, jlong ptr) {
+  eio_req* req = (eio_req*)ptr;
+  struct java_data* data = (struct java_data*)req->data;
+  return data->complete == 1;
 }
 
 JNI_REQ(jint, result)(JNIEnv *env, jobject self, jlong ptr) {

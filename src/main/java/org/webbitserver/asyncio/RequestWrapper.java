@@ -13,8 +13,13 @@ public class RequestWrapper implements AioRequest {
   }
 
   @Override
+  public boolean complete() {
+    return complete(ptr);
+  }
+
+  @Override
   public boolean success() {
-    return result(ptr) > -1;
+    return complete(ptr) && result(ptr) > -1;
   }
 
   @Override
@@ -34,6 +39,9 @@ public class RequestWrapper implements AioRequest {
 
   /** result of syscall, e.g. result = read (... */
   public static native int result(long ptr);
+
+  /** has request completed? */
+  public static native boolean complete(long ptr);
 
   /** read, write, truncate, readahead, 
    *  sync_file_range: file offset, mknod: dev_t */

@@ -3,7 +3,12 @@ package org.webbitserver.asyncio;
 public interface AioRequest {
 
   /**
-   * Did request complete succesfully?
+   * Did request complete?
+   */
+  boolean complete();
+
+  /**
+   * Did request complete succesfully (result >= 0)?
    */
   boolean success();
 
@@ -22,4 +27,5 @@ public interface AioRequest {
    * by the request (if applicable).
    */
   long getPointer();
+
 }
