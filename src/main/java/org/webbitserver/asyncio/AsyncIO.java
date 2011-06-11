@@ -55,7 +55,7 @@ public class AsyncIO {
 	 * This prevents callers from having to continually call poll() when
 	 * there may be nothing to do.
 	 */
-	public static native int block();
+	public static native void block();
 
 	/**
 	 * Wait until all requests have been processed, then
@@ -96,57 +96,51 @@ public class AsyncIO {
 	public static native int numThreads();
 
   /** Does nothing except go through the entire process. */
-	public static native void nop(int priority, AioCallback callback);
+	public static native AioRequest nop(int priority, AioCallback callback);
 
   /** Ties a thread for this long, simulating business. */
-	public static native void busy(int delay, int priority, AioCallback callback);
+	public static native AioRequest busy(int delay, int priority, AioCallback callback);
 
-	public static native void sync(int priority, AioCallback callback);
-	public static native void fsync(int fd, int priority, AioCallback callback);
-	public static native void fdatasync(int fd,int priority, AioCallback callback);
-	public static native void msync(long addr, int length, int flags, int priority, AioCallback callback);
-	public static native void mtouch(long addr, int length, int flags, int priority, AioCallback callback);
-	public static native void mlock(long addr, int length, int priority, AioCallback callback);
-	public static native void mlockall(int flags, int priority, AioCallback callback);
-	public static native void sync_file_range(int fd, int offset, int nbytes, int flags, int priority, AioCallback callback);
-	public static native void close(int fd, int priority, AioCallback callback);
-	public static native void readahead(int fd, int offset, int length, int priority, AioCallback callback);
-	public static native void read(int fd, long buffer, int length, int offset, int priority, AioCallback callback);
-	public static native void write(int fd, long buffer, int length, int offset, int priority, AioCallback callback);
-	public static native void fstat(int fd, int priority, AioCallback callback);
-	public static native void fstatvfs(int fd, int priority, AioCallback callback);
-	public static native void futime(int fd, long atime, long mtime, int priority, AioCallback callback);
-	public static native void ftruncate(int fd, int offset, int priority, AioCallback callback);
-	public static native void fchmod(int fd, int mode, int priority, AioCallback callback);
-	public static native void fchown(int fd, int uid, int gid, int priority, AioCallback callback);
-	public static native void dup2(int fd, int fd2, int priority, AioCallback callback);
-	public static native void sendfile(int outFd, int inFd, int offset, int length, int priority, AioCallback callback);
-	public static native void open(String path, int flags, int mode, int priority, AioCallback callback);
-	public static native void utime(String path, int mode, int priority, AioCallback callback);
-	public static native void truncate(String path, int offset, int priority, AioCallback callback);
-	public static native void chown(String path, int uid, int gid, int priority, AioCallback callback);
-	public static native void chmod(String path, int mode, int priority, AioCallback callback);
-	public static native void mkdir(String path, int mode, int priority, AioCallback callback);
-	public static native void readdir(String path, int flags, int priority, AioCallback callback);
-	public static native void rmdir(String path, int priority, AioCallback callback);
-	public static native void unlink(String path, int priority, AioCallback callback);
-	public static native void readlink(String path, int priority, AioCallback callback);
-	public static native void stat(String path, int priority, AioCallback callback);
-	public static native void lstat(String path, int priority, AioCallback callback);
-	public static native void statvfs(String path, int priority, AioCallback callback);
-	public static native void mknod(String path, int mode, int dev, int priority, AioCallback callback);
-	public static native void link(String path, String newPath, int priority, AioCallback callback);
-	public static native void symlink(String path, String newPath, int priority, AioCallback callback);
-	public static native void rename(String path, String newPath, int priority, AioCallback callback);
-
-	// TODO: public static native void custom(Runnable cmd, int priority, AioCallback callback);
-  // eio_req *eio_custom    (eio_cb execute, int pri, eio_cb cb, void *data);
+	public static native AioRequest sync(int priority, AioCallback callback);
+	public static native AioRequest fsync(int fd, int priority, AioCallback callback);
+	public static native AioRequest fdatasync(int fd,int priority, AioCallback callback);
+	public static native AioRequest msync(long addr, int length, int flags, int priority, AioCallback callback);
+	public static native AioRequest mtouch(long addr, int length, int flags, int priority, AioCallback callback);
+	public static native AioRequest mlock(long addr, int length, int priority, AioCallback callback);
+	public static native AioRequest mlockall(int flags, int priority, AioCallback callback);
+	public static native AioRequest sync_file_range(int fd, int offset, int nbytes, int flags, int priority, AioCallback callback);
+	public static native AioRequest close(int fd, int priority, AioCallback callback);
+	public static native AioRequest readahead(int fd, int offset, int length, int priority, AioCallback callback);
+	public static native AioRequest read(int fd, long buffer, int length, int offset, int priority, AioCallback callback);
+	public static native AioRequest write(int fd, long buffer, int length, int offset, int priority, AioCallback callback);
+	public static native AioRequest fstat(int fd, int priority, AioCallback callback);
+	public static native AioRequest fstatvfs(int fd, int priority, AioCallback callback);
+	public static native AioRequest futime(int fd, long atime, long mtime, int priority, AioCallback callback);
+	public static native AioRequest ftruncate(int fd, int offset, int priority, AioCallback callback);
+	public static native AioRequest fchmod(int fd, int mode, int priority, AioCallback callback);
+	public static native AioRequest fchown(int fd, int uid, int gid, int priority, AioCallback callback);
+	public static native AioRequest dup2(int fd, int fd2, int priority, AioCallback callback);
+	public static native AioRequest sendfile(int outFd, int inFd, int offset, int length, int priority, AioCallback callback);
+	public static native AioRequest open(String path, int flags, int mode, int priority, AioCallback callback);
+	public static native AioRequest utime(String path, int mode, int priority, AioCallback callback);
+	public static native AioRequest truncate(String path, int offset, int priority, AioCallback callback);
+	public static native AioRequest chown(String path, int uid, int gid, int priority, AioCallback callback);
+	public static native AioRequest chmod(String path, int mode, int priority, AioCallback callback);
+	public static native AioRequest mkdir(String path, int mode, int priority, AioCallback callback);
+	public static native AioRequest readdir(String path, int flags, int priority, AioCallback callback);
+	public static native AioRequest rmdir(String path, int priority, AioCallback callback);
+	public static native AioRequest unlink(String path, int priority, AioCallback callback);
+	public static native AioRequest readlink(String path, int priority, AioCallback callback);
+	public static native AioRequest stat(String path, int priority, AioCallback callback);
+	public static native AioRequest lstat(String path, int priority, AioCallback callback);
+	public static native AioRequest statvfs(String path, int priority, AioCallback callback);
+	public static native AioRequest mknod(String path, int mode, int dev, int priority, AioCallback callback);
+	public static native AioRequest link(String path, String newPath, int priority, AioCallback callback);
+	public static native AioRequest symlink(String path, String newPath, int priority, AioCallback callback);
+	public static native AioRequest rename(String path, String newPath, int priority, AioCallback callback);
 
   // TODO: C helpers
   // - obtain uid/gid
-  // - malloc/free
   // - mmap
-  // - access raw memory
   // - helpers to generate/read file mode_t, dev_t
-  // - constants for flags
 }

@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+#include <strings.h>
 #include <poll.h>
 #include <jni.h>
 #include <eio.h>
@@ -62,42 +63,39 @@ JNI_API(jint, numReady   )(JNIEnv *env, jobject self) { return eio_nready(); }
 JNI_API(jint, numPending )(JNIEnv *env, jobject self) { return eio_npending(); }
 JNI_API(jint, numThreads )(JNIEnv *env, jobject self) { return eio_nthreads(); }
 
-struct java_callback {
+struct java_data {
 	JNIEnv* env;
-	jobject global;
+	jobject java_callback;
+	jobject java_request;
 };
 
-struct java_callback* alloc_java_callback(JNIEnv *env, jobject callback) {
-	if (callback == NULL) {
-		return NULL;
-	}
-	struct java_callback* cb;
-	cb = malloc(sizeof(cb));
-	cb->env = env;
-	cb->global = (*env)->NewGlobalRef(env, callback);
-	return cb;
-}
-
-void free_java_callback(struct java_callback* cb) {
-	JNIEnv* env = cb->env;
-	(*env)->DeleteGlobalRef(env, cb->global);
-	free(cb);
+struct java_data *alloc_java_data(JNIEnv *env, jobject callback) {
+	struct java_data *data = (struct java_data*) malloc(sizeof(struct java_data));
+  bzero(data, sizeof(data));
+	data->env = env;
+	data->java_callback = (*env)->NewGlobalRef(env, callback);
+	return data;
 }
 
 int completion_callback(eio_req *req) {
-	struct java_callback* cb = (struct java_callback*)(req->data);
-	if (cb == NULL) {
-		return;
-	}
+	struct java_data* data = (struct java_data*)(req->data);
+	JNIEnv* env = data->env;
 
-	JNIEnv* env = cb->env;
+  // invoke java callback
+  if (data->java_callback != NULL) {
+	  (*env)->CallObjectMethod(env, data->java_callback, callback_jmethod, data->java_request);
+  }
 
-  jobject java_request = (*env)->NewObject(
-      env, req_class, req_constructor, (jlong)req);
-	(*env)->CallObjectMethod(
-      env, cb->global, callback_jmethod, java_request);
+  // cleanup
+	(*env)->DeleteGlobalRef(env, data->java_callback);
+	(*env)->DeleteGlobalRef(env, data->java_request);
+	free(data);
+}
 
-	free_java_callback(cb);
+jobject wrap_request(JNIEnv *env, struct java_data *data, eio_req *req) {
+  data->java_request = (*env)->NewGlobalRef(env, 
+      (*env)->NewObject(env, req_class, req_constructor, (jlong)req));
+  return data->java_request;
 }
 
 // Most of the remaining code is boilerplate, wiring Java native
@@ -105,200 +103,256 @@ int completion_callback(eio_req *req) {
 // but there were enough subtle differences that it didn't seem worthwhile.
 // -jw
 
-JNI_API(void, nop)(JNIEnv *env, jobject self, jint priority, jobject callback) {
-	eio_nop(priority, completion_callback, alloc_java_callback(env, callback));
+JNI_API(jobject, nop)(JNIEnv *env, jobject self, jint priority, jobject callback) {
+  struct java_data *data = alloc_java_data(env, callback);
+	return wrap_request(env, data, eio_nop(priority, completion_callback, data));
 }
 
-JNI_API(void, busy)(JNIEnv *env, jobject self, jint delay, jint priority, jobject callback) {
-	eio_busy(delay, priority, completion_callback, alloc_java_callback(env, callback));
+JNI_API(jobject, busy)(JNIEnv *env, jobject self, jint delay, jint priority, jobject callback) {
+  struct java_data *data = alloc_java_data(env, callback);
+	return wrap_request(env, data, eio_busy(delay, priority, completion_callback, data));
 }
 
-JNI_API(void, sync)(JNIEnv *env, jobject self, jint priority, jobject callback) {
-	eio_sync(priority, completion_callback, alloc_java_callback(env, callback));
+JNI_API(jobject, sync)(JNIEnv *env, jobject self, jint priority, jobject callback) {
+  struct java_data *data = alloc_java_data(env, callback);
+	return wrap_request(env, data, eio_sync(priority, completion_callback, data));
 }
 
-JNI_API(void, fsync)(JNIEnv *env, jobject self, jint fd, jint priority, jobject callback) {
-	eio_fsync(fd, priority, completion_callback, alloc_java_callback(env, callback));
+JNI_API(jobject, fsync)(JNIEnv *env, jobject self, jint fd, jint priority, jobject callback) {
+  struct java_data *data = alloc_java_data(env, callback);
+	return wrap_request(env, data, eio_fsync(fd, priority, completion_callback, data));
 }
 
-JNI_API(void, fdatasync)(JNIEnv *env, jobject self, jint fd, jint priority, jobject callback) {
-	eio_fdatasync(fd, priority, completion_callback, alloc_java_callback(env, callback));
+JNI_API(jobject, fdatasync)(JNIEnv *env, jobject self, jint fd, jint priority, jobject callback) {
+  struct java_data *data = alloc_java_data(env, callback);
+	return wrap_request(env, data, eio_fdatasync(fd, priority, completion_callback, data));
 }
 
-JNI_API(void, msync)(JNIEnv *env, jobject self, jlong address, jint length, jint flags, jint priority, jobject callback) {
-	eio_msync((void*)address, length, flags, priority, completion_callback, alloc_java_callback(env, callback));
+JNI_API(jobject, msync)(JNIEnv *env, jobject self, jlong address, jint length, jint flags, jint priority, jobject callback) {
+  struct java_data *data = alloc_java_data(env, callback);
+	return wrap_request(env, data, eio_msync((void*)address, length, flags, priority, completion_callback, data));
 }
 
-JNI_API(void, mtouch)(JNIEnv *env, jobject self, jlong address, jint length, jint flags, jint priority, jobject callback) {
-	eio_mtouch((void*)address, length, flags, priority, completion_callback, alloc_java_callback(env, callback));
+JNI_API(jobject, mtouch)(JNIEnv *env, jobject self, jlong address, jint length, jint flags, jint priority, jobject callback) {
+  struct java_data *data = alloc_java_data(env, callback);
+	return wrap_request(env, data, eio_mtouch((void*)address, length, flags, priority, completion_callback, data));
 }
 
-JNI_API(void, mlock)(JNIEnv *env, jobject self, jlong address, jint length, jint priority, jobject callback) {
-	eio_mlock((void*)address, length, priority, completion_callback, alloc_java_callback(env, callback));
+JNI_API(jobject, mlock)(JNIEnv *env, jobject self, jlong address, jint length, jint priority, jobject callback) {
+  struct java_data *data = alloc_java_data(env, callback);
+	return wrap_request(env, data, eio_mlock((void*)address, length, priority, completion_callback, data));
 }
 
-JNI_API(void, mlockall)(JNIEnv *env, jobject self, jint flags, jint priority, jobject callback) {
-	eio_mlockall(flags, priority, completion_callback, alloc_java_callback(env, callback));
+JNI_API(jobject, mlockall)(JNIEnv *env, jobject self, jint flags, jint priority, jobject callback) {
+  struct java_data *data = alloc_java_data(env, callback);
+	return wrap_request(env, data, eio_mlockall(flags, priority, completion_callback, data));
 }
 
-JNI_API(void, sync_file_range)(JNIEnv *env, jobject self, jint offset, jint nbytes, jint flags, jint priority, jobject callback) {
-	eio_sync_file_range(flags, offset, nbytes, flags, priority, completion_callback, alloc_java_callback(env, callback));
+JNI_API(jobject, sync_file_range)(JNIEnv *env, jobject self, jint offset, jint nbytes, jint flags, jint priority, jobject callback) {
+  struct java_data *data = alloc_java_data(env, callback);
+	return wrap_request(env, data, eio_sync_file_range(flags, offset, nbytes, flags, priority, completion_callback, data));
 }
 
-JNI_API(void, close)(JNIEnv *env, jobject self, jint fd, jint priority, jobject callback) {
-	eio_close(fd, priority, completion_callback, alloc_java_callback(env, callback));
+JNI_API(jobject, close)(JNIEnv *env, jobject self, jint fd, jint priority, jobject callback) {
+  struct java_data *data = alloc_java_data(env, callback);
+	return wrap_request(env, data, eio_close(fd, priority, completion_callback, data));
 }
 
-JNI_API(void, readahead)(JNIEnv *env, jobject self, jint fd, jint offset, jint length, jint priority, jobject callback) {
-	eio_readahead(fd, offset, length, priority, completion_callback, alloc_java_callback(env, callback));
+JNI_API(jobject, readahead)(JNIEnv *env, jobject self, jint fd, jint offset, jint length, jint priority, jobject callback) {
+  struct java_data *data = alloc_java_data(env, callback);
+	return wrap_request(env, data, eio_readahead(fd, offset, length, priority, completion_callback, data));
 }
 
-JNI_API(void, read)(JNIEnv *env, jobject self, jint fd, jlong buffer, jint length, jint offset, jint priority, jobject callback) {
-	eio_read(fd, (void*)buffer, length, offset, priority, completion_callback, alloc_java_callback(env, callback));
+JNI_API(jobject, read)(JNIEnv *env, jobject self, jint fd, jlong buffer, jint length, jint offset, jint priority, jobject callback) {
+  struct java_data *data = alloc_java_data(env, callback);
+	return wrap_request(env, data, eio_read(fd, (void*)buffer, length, offset, priority, completion_callback, data));
 }
 
-JNI_API(void, write)(JNIEnv *env, jobject self, jint fd, jlong buffer, jint length, jint offset, jint priority, jobject callback) {
-	eio_write(fd, (void*)buffer, length, offset, priority, completion_callback, alloc_java_callback(env, callback));
+JNI_API(jobject, write)(JNIEnv *env, jobject self, jint fd, jlong buffer, jint length, jint offset, jint priority, jobject callback) {
+  struct java_data *data = alloc_java_data(env, callback);
+	return wrap_request(env, data, eio_write(fd, (void*)buffer, length, offset, priority, completion_callback, data));
 }
 
-JNI_API(void, fstat)(JNIEnv *env, jobject self, jint fd, jint priority, jobject callback) {
-	eio_fstat(fd, priority, completion_callback, alloc_java_callback(env, callback));
+JNI_API(jobject, fstat)(JNIEnv *env, jobject self, jint fd, jint priority, jobject callback) {
+  struct java_data *data = alloc_java_data(env, callback);
+	return wrap_request(env, data, eio_fstat(fd, priority, completion_callback, data));
 }
 
-JNI_API(void, fstatvfs)(JNIEnv *env, jobject self, jint fd, jint priority, jobject callback) {
-	eio_fstatvfs(fd, priority, completion_callback, alloc_java_callback(env, callback));
+JNI_API(jobject, fstatvfs)(JNIEnv *env, jobject self, jint fd, jint priority, jobject callback) {
+  struct java_data *data = alloc_java_data(env, callback);
+	return wrap_request(env, data, eio_fstatvfs(fd, priority, completion_callback, data));
 }
 
-JNI_API(void, futime)(JNIEnv *env, jobject self, jint fd, jlong atime, jlong mtime, jint priority, jobject callback) {
-	eio_futime(fd, atime, mtime, priority, completion_callback, alloc_java_callback(env, callback));
+JNI_API(jobject, futime)(JNIEnv *env, jobject self, jint fd, jlong atime, jlong mtime, jint priority, jobject callback) {
+  struct java_data *data = alloc_java_data(env, callback);
+	return wrap_request(env, data, eio_futime(fd, atime, mtime, priority, completion_callback, data));
 }
 
-JNI_API(void, ftruncate)(JNIEnv *env, jobject self, jint fd, jint offset, jint priority, jobject callback) {
-	eio_ftruncate(fd, offset, priority, completion_callback, alloc_java_callback(env, callback));
+JNI_API(jobject, ftruncate)(JNIEnv *env, jobject self, jint fd, jint offset, jint priority, jobject callback) {
+  struct java_data *data = alloc_java_data(env, callback);
+	return wrap_request(env, data, eio_ftruncate(fd, offset, priority, completion_callback, data));
 }
 
-JNI_API(void, fchmod)(JNIEnv *env, jobject self, jint fd, jint mode, jint priority, jobject callback) {
-	eio_fchmod(fd, mode, priority, completion_callback, alloc_java_callback(env, callback));
+JNI_API(jobject, fchmod)(JNIEnv *env, jobject self, jint fd, jint mode, jint priority, jobject callback) {
+  struct java_data *data = alloc_java_data(env, callback);
+	return wrap_request(env, data, eio_fchmod(fd, mode, priority, completion_callback, data));
 }
 
-JNI_API(void, fchown)(JNIEnv *env, jobject self, jint fd, jint uid, jint gid, jint priority, jobject callback) {
-	eio_fchown(fd, uid, gid, priority, completion_callback, alloc_java_callback(env, callback));
+JNI_API(jobject, fchown)(JNIEnv *env, jobject self, jint fd, jint uid, jint gid, jint priority, jobject callback) {
+  struct java_data *data = alloc_java_data(env, callback);
+	return wrap_request(env, data, eio_fchown(fd, uid, gid, priority, completion_callback, data));
 }
 
-JNI_API(void, dup2)(JNIEnv *env, jobject self, jint fd, jint fd2, jint priority, jobject callback) {
-	eio_dup2(fd, fd2, priority, completion_callback, alloc_java_callback(env, callback));
+JNI_API(jobject, dup2)(JNIEnv *env, jobject self, jint fd, jint fd2, jint priority, jobject callback) {
+  struct java_data *data = alloc_java_data(env, callback);
+	return wrap_request(env, data, eio_dup2(fd, fd2, priority, completion_callback, data));
 }
 
-JNI_API(void, sendfile)(JNIEnv *env, jobject self, jint out_fd, jint in_fd, jint offset, jint length, jint priority, jobject callback) {
-	eio_sendfile(out_fd, in_fd, offset, length, priority, completion_callback, alloc_java_callback(env, callback));
+JNI_API(jobject, sendfile)(JNIEnv *env, jobject self, jint out_fd, jint in_fd, jint offset, jint length, jint priority, jobject callback) {
+  struct java_data *data = alloc_java_data(env, callback);
+	return wrap_request(env, data, eio_sendfile(out_fd, in_fd, offset, length, priority, completion_callback, data));
 }
 
-JNI_API(void, open)(JNIEnv *env, jobject self, jstring path, jint flags, jint mode, jint priority, jobject callback) {
+JNI_API(jobject, open)(JNIEnv *env, jobject self, jstring path, jint flags, jint mode, jint priority, jobject callback) {
+  struct java_data *data = alloc_java_data(env, callback);
 	const char* path_chars = (*env)->GetStringUTFChars(env, path, 0);
-	eio_open(path_chars, flags, mode, priority, completion_callback, alloc_java_callback(env, callback));
+	jobject result = wrap_request(env, data, eio_open(path_chars, flags, mode, priority, completion_callback, data));
 	(*env)->ReleaseStringUTFChars(env, path, path_chars);
+  return result;
 }
 
-JNI_API(void, utime)(JNIEnv *env, jobject self, jstring path, jlong atime, jlong mtime, jint priority, jobject callback) {
+JNI_API(jobject, utime)(JNIEnv *env, jobject self, jstring path, jlong atime, jlong mtime, jint priority, jobject callback) {
+  struct java_data *data = alloc_java_data(env, callback);
 	const char* path_chars = (*env)->GetStringUTFChars(env, path, 0);
-	eio_utime(path_chars, atime, mtime, priority, completion_callback, alloc_java_callback(env, callback));
+	jobject result = wrap_request(env, data, eio_utime(path_chars, atime, mtime, priority, completion_callback, data));
 	(*env)->ReleaseStringUTFChars(env, path, path_chars);
+  return result;
 }
 
-JNI_API(void, truncate)(JNIEnv *env, jobject self, jstring path, jint offset, jint priority, jobject callback) {
+JNI_API(jobject, truncate)(JNIEnv *env, jobject self, jstring path, jint offset, jint priority, jobject callback) {
+  struct java_data *data = alloc_java_data(env, callback);
 	const char* path_chars = (*env)->GetStringUTFChars(env, path, 0);
-	eio_truncate(path_chars, offset, priority, completion_callback, alloc_java_callback(env, callback));
+	jobject result = wrap_request(env, data, eio_truncate(path_chars, offset, priority, completion_callback, data));
 	(*env)->ReleaseStringUTFChars(env, path, path_chars);
+  return result;
 }
 
-JNI_API(void, chown)(JNIEnv *env, jobject self, jstring path, jint uid, jint gid, jint priority, jobject callback) {
+JNI_API(jobject, chown)(JNIEnv *env, jobject self, jstring path, jint uid, jint gid, jint priority, jobject callback) {
+  struct java_data *data = alloc_java_data(env, callback);
 	const char* path_chars = (*env)->GetStringUTFChars(env, path, 0);
-	eio_chown(path_chars, uid, gid, priority, completion_callback, alloc_java_callback(env, callback));
+	jobject result = wrap_request(env, data, eio_chown(path_chars, uid, gid, priority, completion_callback, data));
 	(*env)->ReleaseStringUTFChars(env, path, path_chars);
+  return result;
 }
 
-JNI_API(void, chmod)(JNIEnv *env, jobject self, jstring path, jint mode, jint priority, jobject callback) {
+JNI_API(jobject, chmod)(JNIEnv *env, jobject self, jstring path, jint mode, jint priority, jobject callback) {
+  struct java_data *data = alloc_java_data(env, callback);
 	const char* path_chars = (*env)->GetStringUTFChars(env, path, 0);
-	eio_chmod(path_chars, mode, priority, completion_callback, alloc_java_callback(env, callback));
+	jobject result = wrap_request(env, data, eio_chmod(path_chars, mode, priority, completion_callback, data));
 	(*env)->ReleaseStringUTFChars(env, path, path_chars);
+  return result;
 }
 
-JNI_API(void, mkdir)(JNIEnv *env, jobject self, jstring path, jint mode, jint priority, jobject callback) {
+JNI_API(jobject, mkdir)(JNIEnv *env, jobject self, jstring path, jint mode, jint priority, jobject callback) {
+  struct java_data *data = alloc_java_data(env, callback);
 	const char* path_chars = (*env)->GetStringUTFChars(env, path, 0);
-	eio_mkdir(path_chars, mode, priority, completion_callback, alloc_java_callback(env, callback));
+	jobject result = wrap_request(env, data, eio_mkdir(path_chars, mode, priority, completion_callback, data));
 	(*env)->ReleaseStringUTFChars(env, path, path_chars);
+  return result;
 }
 
-JNI_API(void, readdir)(JNIEnv *env, jobject self, jstring path, jint flags, jint priority, jobject callback) {
+JNI_API(jobject, readdir)(JNIEnv *env, jobject self, jstring path, jint flags, jint priority, jobject callback) {
+  struct java_data *data = alloc_java_data(env, callback);
 	const char* path_chars = (*env)->GetStringUTFChars(env, path, 0);
-	eio_readdir(path_chars, flags, priority, completion_callback, alloc_java_callback(env, callback));
+	jobject result = wrap_request(env, data, eio_readdir(path_chars, flags, priority, completion_callback, data));
 	(*env)->ReleaseStringUTFChars(env, path, path_chars);
+  return result;
 }
 
-JNI_API(void, rmdir)(JNIEnv *env, jobject self, jstring path, jint priority, jobject callback) {
+JNI_API(jobject, rmdir)(JNIEnv *env, jobject self, jstring path, jint priority, jobject callback) {
+  struct java_data *data = alloc_java_data(env, callback);
 	const char* path_chars = (*env)->GetStringUTFChars(env, path, 0);
-	eio_rmdir(path_chars, priority, completion_callback, alloc_java_callback(env, callback));
+	jobject result = wrap_request(env, data, eio_rmdir(path_chars, priority, completion_callback, data));
 	(*env)->ReleaseStringUTFChars(env, path, path_chars);
+  return result;
 }
 
-JNI_API(void, unlink)(JNIEnv *env, jobject self, jstring path, jint priority, jobject callback) {
+JNI_API(jobject, unlink)(JNIEnv *env, jobject self, jstring path, jint priority, jobject callback) {
+  struct java_data *data = alloc_java_data(env, callback);
 	const char* path_chars = (*env)->GetStringUTFChars(env, path, 0);
-	eio_unlink(path_chars, priority, completion_callback, alloc_java_callback(env, callback));
+	jobject result = wrap_request(env, data, eio_unlink(path_chars, priority, completion_callback, data));
 	(*env)->ReleaseStringUTFChars(env, path, path_chars);
+  return result;
 }
 
-JNI_API(void, readlink)(JNIEnv *env, jobject self, jstring path, jint priority, jobject callback) {
+JNI_API(jobject, readlink)(JNIEnv *env, jobject self, jstring path, jint priority, jobject callback) {
+  struct java_data *data = alloc_java_data(env, callback);
 	const char* path_chars = (*env)->GetStringUTFChars(env, path, 0);
-	eio_readlink(path_chars, priority, completion_callback, alloc_java_callback(env, callback));
+	jobject result = wrap_request(env, data, eio_readlink(path_chars, priority, completion_callback, data));
 	(*env)->ReleaseStringUTFChars(env, path, path_chars);
+  return result;
 }
 
-JNI_API(void, stat)(JNIEnv *env, jobject self, jstring path, jint priority, jobject callback) {
+JNI_API(jobject, stat)(JNIEnv *env, jobject self, jstring path, jint priority, jobject callback) {
+  struct java_data *data = alloc_java_data(env, callback);
 	const char* path_chars = (*env)->GetStringUTFChars(env, path, 0);
-	eio_stat(path_chars, priority, completion_callback, alloc_java_callback(env, callback));
+	jobject result = wrap_request(env, data, eio_stat(path_chars, priority, completion_callback, data));
 	(*env)->ReleaseStringUTFChars(env, path, path_chars);
+  return result;
 }
 
-JNI_API(void, lstat)(JNIEnv *env, jobject self, jstring path, jint priority, jobject callback) {
+JNI_API(jobject, lstat)(JNIEnv *env, jobject self, jstring path, jint priority, jobject callback) {
+  struct java_data *data = alloc_java_data(env, callback);
 	const char* path_chars = (*env)->GetStringUTFChars(env, path, 0);
-	eio_lstat(path_chars, priority, completion_callback, alloc_java_callback(env, callback));
+	jobject result = wrap_request(env, data, eio_lstat(path_chars, priority, completion_callback, data));
 	(*env)->ReleaseStringUTFChars(env, path, path_chars);
+  return result;
 }
 
-JNI_API(void, statvfs)(JNIEnv *env, jobject self, jstring path, jint priority, jobject callback) {
+JNI_API(jobject, statvfs)(JNIEnv *env, jobject self, jstring path, jint priority, jobject callback) {
+  struct java_data *data = alloc_java_data(env, callback);
 	const char* path_chars = (*env)->GetStringUTFChars(env, path, 0);
-	eio_statvfs(path_chars, priority, completion_callback, alloc_java_callback(env, callback));
+	jobject result = wrap_request(env, data, eio_statvfs(path_chars, priority, completion_callback, data));
 	(*env)->ReleaseStringUTFChars(env, path, path_chars);
+  return result;
 }
 
-JNI_API(void, mknod)(JNIEnv *env, jobject self, jstring path, jint mode, jint dev, jint priority, jobject callback) {
+JNI_API(jobject, mknod)(JNIEnv *env, jobject self, jstring path, jint mode, jint dev, jint priority, jobject callback) {
+  struct java_data *data = alloc_java_data(env, callback);
 	const char* path_chars = (*env)->GetStringUTFChars(env, path, 0);
-	eio_mknod(path_chars, mode, dev, priority, completion_callback, alloc_java_callback(env, callback));
+	jobject result = wrap_request(env, data, eio_mknod(path_chars, mode, dev, priority, completion_callback, data));
 	(*env)->ReleaseStringUTFChars(env, path, path_chars);
+  return result;
 }
 
-JNI_API(void, link)(JNIEnv *env, jobject self, jstring path, jstring new_path, jint priority, jobject callback) {
+JNI_API(jobject, link)(JNIEnv *env, jobject self, jstring path, jstring new_path, jint priority, jobject callback) {
+  struct java_data *data = alloc_java_data(env, callback);
 	const char* path_chars = (*env)->GetStringUTFChars(env, path, 0);
 	const char* new_path_chars = (*env)->GetStringUTFChars(env, path, 0);
-	eio_link(path_chars, new_path_chars, priority, completion_callback, alloc_java_callback(env, callback));
+	jobject result = wrap_request(env, data, eio_link(path_chars, new_path_chars, priority, completion_callback, data));
 	(*env)->ReleaseStringUTFChars(env, new_path, new_path_chars);
 	(*env)->ReleaseStringUTFChars(env, path, path_chars);
+  return result;
 }
 
-JNI_API(void, symlink)(JNIEnv *env, jobject self, jstring path, jstring new_path, jint priority, jobject callback) {
+JNI_API(jobject, symlink)(JNIEnv *env, jobject self, jstring path, jstring new_path, jint priority, jobject callback) {
+  struct java_data *data = alloc_java_data(env, callback);
 	const char* path_chars = (*env)->GetStringUTFChars(env, path, 0);
 	const char* new_path_chars = (*env)->GetStringUTFChars(env, path, 0);
-	eio_symlink(path_chars, new_path_chars, priority, completion_callback, alloc_java_callback(env, callback));
+	jobject result = wrap_request(env, data, eio_symlink(path_chars, new_path_chars, priority, completion_callback, data));
 	(*env)->ReleaseStringUTFChars(env, new_path, new_path_chars);
 	(*env)->ReleaseStringUTFChars(env, path, path_chars);
+  return result;
 }
 
-JNI_API(void, rename)(JNIEnv *env, jobject self, jstring path, jstring new_path, jint priority, jobject callback) {
+JNI_API(jobject, rename)(JNIEnv *env, jobject self, jstring path, jstring new_path, jint priority, jobject callback) {
+  struct java_data *data = alloc_java_data(env, callback);
 	const char* path_chars = (*env)->GetStringUTFChars(env, path, 0);
 	const char* new_path_chars = (*env)->GetStringUTFChars(env, path, 0);
-	eio_rename(path_chars, new_path_chars, priority, completion_callback, alloc_java_callback(env, callback));
+	jobject result = wrap_request(env, data, eio_rename(path_chars, new_path_chars, priority, completion_callback, data));
 	(*env)->ReleaseStringUTFChars(env, new_path, new_path_chars);
 	(*env)->ReleaseStringUTFChars(env, path, path_chars);
+  return result;
 }
 
 JNI_REQ(jint, result)(JNIEnv *env, jobject self, jlong ptr) {
